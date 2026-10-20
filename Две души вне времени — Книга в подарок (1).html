@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Две души вне времени — Электронная книга</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        body: ['"Merriweather"', 'Georgia', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        sepia: {
+                            50: '#fbf0d9',
+                            100: '#f4ecd8',
+                            800: '#5c4b37',
+                            900: '#423221',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Themes styling */
+        body.theme-light {
+            background-color: #fcfbf9;
+            color: #292524;
+        }
+        body.theme-sepia {
+            background-color: #f4ecd8;
+            color: #423221;
+        }
+        body.theme-dark {
+            background-color: #121212;
+            color: #e5e5e5;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+
+        /* Chapter text formatting */
+        .chapter-content p {
+            margin-bottom: 1.5rem;
+            line-height: 1.85;
+            text-align: justify;
+            text-justify: inter-word;
+        }
+
+        .chapter-content blockquote {
+            border-left: 3px solid currentColor;
+            opacity: 0.85;
+            padding-left: 1.25rem;
+            margin: 1.75rem 0;
+            font-style: italic;
+        }
+
+        .chapter-content p:first-of-type::first-letter {
+            font-size: 3.25em;
+            float: left;
+            line-height: 0.8;
+            margin-right: 0.15em;
+            margin-top: 0.1em;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 700;
+        }
+
+        /* Smooth transitions */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="theme-sepia transition-colors duration-300 min-h-screen flex flex-col font-body selection:bg-amber-200 selection:text-amber-900">
+
+    <!-- Reading Progress Bar -->
+    <div id="progress-container" class="fixed top-0 left-0 w-full h-1 bg-black/10 z-50">
+        <div id="progress-bar" class="h-full bg-amber-600 transition-all duration-150 w-0"></div>
+    </div>
+
+    <!-- Header / Navigation Header -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-opacity-90 border-b border-black/5 transition-colors duration-300">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <button onclick="showScreen('cover')" class="flex items-center gap-2 hover:opacity-80 transition">
+                <i class="fa-solid font-serif text-xl font-bold">📖</i>
+                <span class="font-serif font-bold text-lg md:text-xl tracking-wide hidden sm:inline">Две души вне времени</span>
+            </button>
+
+            <!-- Reader Controls & Admin Toggle -->
+            <div class="flex items-center gap-2 md:gap-3">
+                <!-- FontSize Control -->
+                <div class="flex items-center bg-black/5 rounded-full px-2 py-1 gap-1 text-xs">
+                    <button onclick="changeFontSize(-1)" class="w-7 h-7 rounded-full hover:bg-black/10 flex items-center justify-center font-bold" title="Уменьшить шрифт">A-</button>
+                    <button onclick="changeFontSize(1)" class="w-7 h-7 rounded-full hover:bg-black/10 flex items-center justify-center font-bold" title="Увеличить шрифт">A+</button>
+                </div>
+
+                <!-- Theme Toggle Buttons -->
+                <div class="flex bg-black/5 rounded-full p-1 gap-1">
+                    <button onclick="setTheme('light')" class="w-6 h-6 rounded-full bg-slate-100 border border-slate-300 shadow-sm" title="Светлая"></button>
+                    <button onclick="setTheme('sepia')" class="w-6 h-6 rounded-full bg-[#f4ecd8] border border-amber-300 shadow-sm" title="Сепия"></button>
+                    <button onclick="setTheme('dark')" class="w-6 h-6 rounded-full bg-neutral-800 border border-neutral-700 shadow-sm" title="Тёмная"></button>
+                </div>
+
+                <!-- Navigation Menu Button -->
+                <button onclick="toggleTocModal()" class="p-2 rounded-full hover:bg-black/5 transition" title="Оглавление">
+                    <i class="fa-solid fa-list-ul text-lg"></i>
+                </button>
+
+                <!-- Admin Mode Toggle -->
+                <button id="admin-toggle-btn" onclick="toggleAdminPanel()" class="px-3 py-1.5 rounded-full text-xs font-sans font-medium border border-current opacity-70 hover:opacity-100 transition">
+                    <i class="fa-solid fa-pen-nib mr-1"></i> Редактор
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-3xl mx-auto px-4 py-8 md:py-12 w-full">
+
+        <!-- COVER SCREEN -->
+        <section id="screen-cover" class="fade-in text-center py-8 md:py-16">
+            <div class="inline-block p-3 rounded-full bg-amber-500/10 mb-6">
+                <i class="fa-solid fa-heart text-amber-600 text-3xl"></i>
+            </div>
+            <h1 class="font-serif text-4xl md:text-6xl font-bold tracking-tight mb-4">
+                Две души вне времени
+            </h1>
+            <p class="font-serif italic text-xl md:text-2xl opacity-80 mb-8 max-w-xl mx-auto">
+                История, которая началась с одного сообщения
+            </p>
+
+            <div class="w-24 h-0.5 bg-current opacity-20 mx-auto mb-10"></div>
+
+            <p class="font-sans text-sm md:text-base opacity-75 max-w-lg mx-auto leading-relaxed mb-10">
+                Добро пожаловать в личную электронную книгу. Это уютное пространство создано для чтения особенной истории о случайных встречах, прощении и глубокой связи между двумя людьми.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button onclick="startReading()" class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-amber-700 text-white font-sans font-medium hover:bg-amber-800 shadow-lg hover:shadow-xl transition transform active:scale-95">
+                    <i class="fa-solid fa-book-open mr-2"></i> Читать книгу
+                </button>
+                <button id="bookmark-resume-btn" onclick="resumeBookmark()" class="hidden w-full sm:w-auto px-6 py-3.5 rounded-full border border-current opacity-80 hover:opacity-100 font-sans text-sm transition">
+                    <i class="fa-solid fa-bookmark text-amber-600 mr-2"></i> Перейти к закладке
+                </button>
+            </div>
+        </section>
+
+        <!-- READER SCREEN -->
+        <section id="screen-reader" class="hidden fade-in">
+            <!-- Chapter Header -->
+            <div class="mb-8 pb-6 border-b border-black/10 flex justify-between items-start">
+                <div>
+                    <span id="reader-chapter-num" class="font-sans text-xs uppercase tracking-widest opacity-60 block mb-1">Глава</span>
+                    <h2 id="reader-chapter-title" class="font-serif text-2xl md:text-4xl font-bold"></h2>
+                </div>
+                <button onclick="toggleBookmark()" id="bookmark-btn" class="p-2 text-2xl opacity-40 hover:opacity-100 transition" title="Сохранить закладку">
+                    <i class="fa-regular fa-bookmark"></i>
+                </button>
+            </div>
+
+            <!-- Chapter Body -->
+            <div id="reader-chapter-body" class="chapter-content font-body text-lg md:text-xl">
+                <!-- Text populated dynamically -->
+            </div>
+
+            <!-- Chapter Navigation Footer -->
+            <div class="mt-12 pt-8 border-t border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-sm">
+                <button id="btn-prev-chapter" onclick="prevChapter()" class="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-black/10 hover:bg-black/5 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Предыдущая глава
+                </button>
+                
+                <span id="chapter-indicator" class="opacity-60 text-xs"></span>
+
+                <button id="btn-next-chapter" onclick="nextChapter()" class="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-black/10 hover:bg-black/5 transition flex items-center justify-center gap-2">
+                    Следующая глава <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ADMIN / AUTHOR PANEL SCREEN -->
+        <section id="screen-admin" class="hidden fade-in font-sans">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-black/10">
+                <h2 class="text-2xl font-bold font-serif">Панель автора (Редактор)</h2>
+                <button onclick="showScreen('cover')" class="text-sm opacity-60 hover:opacity-100">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Add/Edit Chapter Form -->
+            <div class="p-6 rounded-2xl bg-black/5 mb-8">
+                <h3 id="form-heading" class="text-lg font-bold mb-4">Добавить новую главу</h3>
+                <input type="hidden" id="edit-chapter-index" value="-1">
+                
+                <div class="mb-4">
+                    <label class="block text-xs uppercase font-semibold mb-1 opacity-70">Название главы</label>
+                    <input type="text" id="input-title" placeholder="Глава первая. Название..." class="w-full px-4 py-2.5 rounded-xl border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-amber-500 text-stone-900">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs uppercase font-semibold mb-1 opacity-70">Текст главы (абзацы разделяйте новой строкой)</label>
+                    <textarea id="input-content" rows="10" placeholder="Напишите историю здесь..." class="w-full px-4 py-2.5 rounded-xl border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-amber-500 text-stone-900 font-body text-base"></textarea>
+                    <p class="text-xs opacity-60 mt-1">Совет: Для выделения красивой цитаты начните строчку с символа ">".</p>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="saveChapterForm()" class="px-6 py-2.5 rounded-xl bg-amber-700 text-white font-medium hover:bg-amber-800 transition">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i> Сохранить главу
+                    </button>
+                    <button onclick="resetChapterForm()" class="px-4 py-2.5 rounded-xl border border-black/10 hover:bg-black/5 transition text-sm">
+                        Сбросить
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chapters List & Export / Import -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold font-serif">Все главы книги</h3>
+                    <div class="flex gap-2 text-xs">
+                        <button onclick="exportBookJSON()" class="px-3 py-1.5 rounded-lg border border-black/20 hover:bg-black/5">
+                            <i class="fa-solid fa-download mr-1"></i> Скачать JSON
+                        </button>
+                        <label class="px-3 py-1.5 rounded-lg border border-black/20 hover:bg-black/5 cursor-pointer">
+                            <i class="fa-solid fa-upload mr-1"></i> Загрузить JSON
+                            <input type="file" id="import-json-file" accept=".json" onchange="importBookJSON(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div id="admin-chapters-list" class="space-y-3">
+                    <!-- Dynamic List of Chapters -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Table of Contents Modal -->
+    <div id="toc-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-end transition-opacity opacity-0 pointer-events-none">
+        <div class="w-full max-w-md bg-stone-50 dark:bg-neutral-900 dark:text-white h-full p-6 overflow-y-auto shadow-2xl flex flex-col font-sans">
+            <div class="flex justify-between items-center mb-6 border-b pb-4 dark:border-neutral-800">
+                <h3 class="font-serif text-2xl font-bold">Оглавление</h3>
+                <button onclick="toggleTocModal()" class="p-2 opacity-60 hover:opacity-100">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div id="toc-list" class="space-y-2 flex-grow">
+                <!-- Chapters items will be rendered here -->
+            </div>
+
+            <div class="mt-8 pt-4 border-t dark:border-neutral-800 text-center text-xs opacity-60">
+                Две души вне времени &copy; Подарочное издание
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-neutral-900 text-white px-5 py-3 rounded-xl shadow-xl text-sm font-sans flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300">
+        <i class="fa-solid fa-circle-info text-amber-400"></i>
+        <span id="toast-message">Сообщение</span>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // Initial Default Data
+        const DEFAULT_BOOK = [
+            {
+                title: "Глава первая. Человек, которого она не искала",
+                content: `Иногда в жизни происходят вещи, которые невозможно объяснить логикой. Ты не планируешь встречу, не ищешь определённого человека, не ждёшь никаких перемен. Просто однажды делаешь что-то совершенно обыкновенное — открываешь забытый чат, читаешь случайное сообщение, задерживаешь взгляд на нескольких строчках. А потом понимаешь, что внутри тебя что-то сдвинулось.
+
+Анар не собиралась ни с кем знакомиться.
+
+Когда-то она записалась на тренинг, надеясь разобраться в себе, понять, почему так много отдаёт другим и так мало оставляет для себя. Ей хотелось найти ответы на вопросы, которые она давно носила внутри. Но попасть на тренинг не получилось. Повседневные заботы, работа, обязательства — всё оказалось важнее её собственного желания что-то изменить.
+
+Группа в WhatsApp осталась.
+
+Она почти никогда туда не заходила. Эта маленькая виртуальная жизнь продолжалась без неё: люди знакомились, обсуждали задания, делились впечатлениями. Анар словно выпала из неё ещё до того, как всё началось.
+
+Но в тот вечер она почему-то открыла чат.
+
+Никакой особенной причины не было. По крайней мере, той, которую можно было бы объяснить словами.
+
+Она стала листать сообщения, почти не вчитываясь. Чужие разговоры, незнакомые имена, короткие реплики. И вдруг остановилась.
+
+Один мужчина написал, что его сердце будто зачерствело. Что он перестал чувствовать эмоции. Что многое понимает умом, но не может почувствовать душой.
+
+Анар перечитала его слова.
+
+И ещё раз.
+
+В сообщении не было просьбы о помощи в привычном понимании. Он не говорил: «Спасите меня». Не просил пожалеть его. Он просто признался в том, что с ним происходит.
+
+Другие участники отвечали ему прямо в группе. Кто-то пытался объяснить, кто-то давал советы, кто-то предлагал свои способы справиться с внутренней пустотой.
+
+Анар читала и чувствовала, как в ней поднимается странное желание написать этому незнакомцу лично.
+
+Она не знала его имени — вернее, ещё не знала. Не представляла его лица. Не понимала, сколько ему лет, где он живёт и что заставило его однажды перестать доверять собственным чувствам.
+
+Но ей захотелось, чтобы он не остался один на один со своими словами.
+
+Может быть, потому, что она сама давно хотела поговорить с кем-то по-настоящему.
+
+Не обменяться вежливыми фразами. Не обсудить погоду, работу или повседневные мелочи. А поговорить так, чтобы не приходилось прятаться за привычной улыбкой и делать вид, что внутри всё спокойно.
+
+Она знала, каково это — жить, продолжая выполнять свои обязанности, и одновременно чувствовать, что где-то глубоко внутри остаётся слишком много невысказанного.
+
+Анар открыла личный чат незнакомца.
+
+Напечатала приветствие. Стерла. Попробовала снова.
+
+Ей не хотелось, чтобы он решил, будто она вмешивается в его жизнь или считает себя человеком, который знает ответы на все вопросы.
+
+В конце концов она отправила сообщение. Спросила, почему он так строг к себе. Сказала, что увидела его слова в группе и почему-то захотела написать именно ему.
+
+Сообщение было отправлено.
+
+И теперь оставалось ждать.
+
+Она не знала, ответит ли он. Может быть, проигнорирует. Может быть, удивится. В конце концов, кто она ему? Совершенно посторонний человек, который внезапно появился в личных сообщениях поздним вечером.
+
+Но ответ пришёл почти сразу.
+
+Он поблагодарил её за то, что она уделила ему время.
+
+А затем начал рассказывать о себе.
+
+Не всё сразу. Сначала — короткими фразами, словно каждое слово давалось ему с трудом. Потом глубже. О том, что совершал поступки, за которые теперь осуждал себя. О том, что не может забыть причинённую другим боль. О том, что совесть не позволяет ему просто закрыть прошлое и объявить себя прощённым.
+
+Анар поняла: он не столько искал оправдания, сколько пытался разобраться, как жить дальше, если ты сам не можешь принять человека, которым когда-то был.
+
+Она не стала убеждать его, что ничего страшного не произошло. Не сказала, что прошлое не имеет значения. Она понимала: некоторые поступки нельзя отменить, сколько бы ни хотелось вернуться назад.
+
+Но можно выбрать, кем становиться после них.
+
+Она говорила ему о прощении, о вере, о том, что осознание собственных ошибок уже требует честности перед собой. Напоминала, что никто из людей не безгрешен и что раскаяние не должно превращаться в бесконечное наказание самого себя.
+
+Он отвечал вопросами.
+
+Как простить себя, если совесть не позволяет? Как забыть чужие слёзы? Как перестать думать о том, что могло произойти с людьми, чьи судьбы ты затронул?
+
+На эти вопросы не существовало лёгких ответов.
+
+Анар и не пыталась сделать вид, что они есть.
+
+Она лишь осторожно подводила его к мысли: помнить — не значит всю жизнь оставаться пленником прошлого. И если человек действительно понял свои ошибки, он может начать с того, чтобы больше не повторять их и постараться приносить своим близким не боль, а радость.
+
+В какой-то момент Ербол спросил её, сумела ли она сама простить себя.
+
+Этот вопрос заставил её на мгновение замолчать.
+
+Она ведь тоже была далеко не идеальной. Тоже совершала ошибки. Тоже жила с воспоминаниями, которые не могла изменить.
+
+И, возможно, именно поэтому так хорошо понимала его.
+
+> — Мы не забудем того, что сделали. Никогда. Но это не значит, что не можем выбрать другой путь.
+
+Она написала ему эту мысль почти без раздумий.
+
+И только потом поняла, что произнесла её не только для него.
+
+Возможно, она и сама нуждалась в этих словах.`
+            },
+            {
+                title: "Глава вторая. Разговоры под ночным небом",
+                content: `Продолжение следует... 
+
+Автор пока пишет эту главу. Вы сможете добавить её в панели редактора!`
+            }
+        ];
+
+        // App State
+        let chapters = [];
+        let currentChapterIndex = 0;
+        let fontSizeLevel = 1; // 0: small, 1: normal, 2: large, 3: x-large
+        const fontClasses = ['text-base', 'text-lg', 'text-xl', 'text-2xl'];
+
+        // On Load initialization
+        window.onload = function() {
+            loadChapters();
+            initTheme();
+            checkBookmarkBtn();
+            
+            // Scroll Progress Listener
+            window.addEventListener('scroll', updateProgressBar);
+        };
+
+        // Storage Operations
+        function loadChapters() {
+            const stored = localStorage.getItem('two_souls_chapters');
+            if (stored) {
+                try {
+                    chapters = JSON.parse(stored);
+                } catch (e) {
+                    chapters = DEFAULT_BOOK;
+                }
+            } else {
+                chapters = DEFAULT_BOOK;
+                saveChaptersToStorage();
+            }
+        }
+
+        function saveChaptersToStorage() {
+            localStorage.setItem('two_souls_chapters', JSON.stringify(chapters));
+        }
+
+        // Screen Navigation
+        function showScreen(screenName) {
+            document.getElementById('screen-cover').classList.add('hidden');
+            document.getElementById('screen-reader').classList.add('hidden');
+            document.getElementById('screen-admin').classList.add('hidden');
+
+            document.getElementById(`screen-${screenName}`).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (screenName === 'admin') {
+                renderAdminList();
+            }
+        }
+
+        function startReading() {
+            showChapter(0);
+        }
+
+        function showChapter(index) {
+            if (index < 0 || index >= chapters.length) return;
+            
+            currentChapterIndex = index;
+            const ch = chapters[index];
+
+            document.getElementById('reader-chapter-num').innerText = `Глава ${index + 1} из ${chapters.length}`;
+            document.getElementById('reader-chapter-title').innerText = ch.title;
+            
+            // Format paragraphs and quotes
+            const formattedBody = ch.content
+                .split('\n\n')
+                .map(paragraph => {
+                    let p = paragraph.trim();
+                    if (!p) return '';
+                    if (p.startsWith('>')) {
+                        return `<blockquote>${p.replace('>', '').trim()}</blockquote>`;
+                    }
+                    return `<p>${p}</p>`;
+                })
+                .join('');
+
+            document.getElementById('reader-chapter-body').innerHTML = formattedBody;
+
+            // Nav buttons update
+            document.getElementById('btn-prev-chapter').style.visibility = index === 0 ? 'hidden' : 'visible';
+            document.getElementById('btn-next-chapter').style.visibility = index === chapters.length - 1 ? 'hidden' : 'visible';
+            document.getElementById('chapter-indicator').innerText = `${index + 1} / ${chapters.length}`;
+
+            // Update Bookmark button UI
+            updateBookmarkIcon();
+
+            showScreen('reader');
+            updateProgressBar();
+        }
+
+        function prevChapter() {
+            if (currentChapterIndex > 0) showChapter(currentChapterIndex - 1);
+        }
+
+        function nextChapter() {
+            if (currentChapterIndex < chapters.length - 1) showChapter(currentChapterIndex + 1);
+        }
+
+        // Themes & Fonts
+        function setTheme(theme) {
+            document.body.classList.remove('theme-light', 'theme-sepia', 'theme-dark');
+            document.body.classList.add(`theme-${theme}`);
+            localStorage.setItem('two_souls_theme', theme);
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('two_souls_theme') || 'sepia';
+            setTheme(savedTheme);
+        }
+
+        function changeFontSize(delta) {
+            fontSizeLevel = Math.max(0, Math.min(3, fontSizeLevel + delta));
+            const readerBody = document.getElementById('reader-chapter-body');
+            
+            // Remove existing text classes
+            fontClasses.forEach(c => readerBody.classList.remove(c));
+            readerBody.classList.add(fontClasses[fontSizeLevel]);
+        }
+
+        // Bookmark functionality
+        function toggleBookmark() {
+            const savedBookmark = getBookmark();
+            if (savedBookmark && savedBookmark.index === currentChapterIndex) {
+                localStorage.removeItem('two_souls_bookmark');
+                showToast('Закладка удалена');
+            } else {
+                localStorage.setItem('two_souls_bookmark', JSON.stringify({
+                    index: currentChapterIndex,
+                    title: chapters[currentChapterIndex].title
+                }));
+                showToast('Закладка сохранена!');
+            }
+            updateBookmarkIcon();
+            checkBookmarkBtn();
+        }
+
+        function getBookmark() {
+            const b = localStorage.getItem('two_souls_bookmark');
+            return b ? JSON.parse(b) : null;
+        }
+
+        function updateBookmarkIcon() {
+            const btn = document.getElementById('bookmark-btn');
+            const bookmark = getBookmark();
+            if (bookmark && bookmark.index === currentChapterIndex) {
+                btn.innerHTML = '<i class="fa-solid fa-bookmark text-amber-600"></i>';
+            } else {
+                btn.innerHTML = '<i class="fa-regular fa-bookmark"></i>';
+            }
+        }
+
+        function checkBookmarkBtn() {
+            const bookmark = getBookmark();
+            const btn = document.getElementById('bookmark-resume-btn');
+            if (bookmark) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        function resumeBookmark() {
+            const bookmark = getBookmark();
+            if (bookmark) {
+                showChapter(bookmark.index);
+            }
+        }
+
+        // TOC Modal
+        function toggleTocModal() {
+            const modal = document.getElementById('toc-modal');
+            const isHidden = modal.classList.contains('pointer-events-none');
+
+            if (isHidden) {
+                renderTocList();
+                modal.classList.remove('pointer-events-none', 'opacity-0');
+            } else {
+                modal.classList.add('pointer-events-none', 'opacity-0');
+            }
+        }
+
+        function renderTocList() {
+            const container = document.getElementById('toc-list');
+            container.innerHTML = chapters.map((ch, idx) => `
+                <button onclick="showChapter(${idx}); toggleTocModal();" class="w-full text-left p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition flex items-center justify-between group">
+                    <div>
+                        <span class="text-xs opacity-50 block font-sans">Глава ${idx + 1}</span>
+                        <span class="font-serif font-semibold text-lg group-hover:text-amber-600 transition">${ch.title}</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-30 group-hover:opacity-100"></i>
+                </button>
+            `).join('');
+        }
+
+        // Progress Bar Calculation
+        function updateProgressBar() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progress-bar").style.width = scrolled + "%";
+        }
+
+        // Admin Mode Logic
+        function toggleAdminPanel() {
+            const adminScreen = document.getElementById('screen-admin');
+            if (adminScreen.classList.contains('hidden')) {
+                resetChapterForm();
+                showScreen('admin');
+            } else {
+                showScreen('cover');
+            }
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('admin-chapters-list');
+            container.innerHTML = chapters.map((ch, idx) => `
+                <div class="p-4 rounded-xl border border-black/10 bg-white/50 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs opacity-50">#${idx + 1}</span>
+                        <h4 class="font-bold text-base">${ch.title}</h4>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editChapterForm(${idx})" class="p-2 rounded-lg bg-black/5 hover:bg-black/10 text-xs">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteChapter(${idx})" class="p-2 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 text-xs">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveChapterForm() {
+            const title = document.getElementById('input-title').value.trim();
+            const content = document.getElementById('input-content').value.trim();
+            const editIdx = parseInt(document.getElementById('edit-chapter-index').value);
+
+            if (!title || !content) {
+                showToast('Пожалуйста, заполните заголовок и текст');
+                return;
+            }
+
+            if (editIdx >= 0) {
+                chapters[editIdx] = { title, content };
+                showToast('Глава обновлена');
+            } else {
+                chapters.push({ title, content });
+                showToast('Новая глава добавлена');
+            }
+
+            saveChaptersToStorage();
+            resetChapterForm();
+            renderAdminList();
+        }
+
+        function editChapterForm(index) {
+            const ch = chapters[index];
+            document.getElementById('input-title').value = ch.title;
+            document.getElementById('input-content').value = ch.content;
+            document.getElementById('edit-chapter-index').value = index;
+            document.getElementById('form-heading').innerText = `Редактировать главу #${index + 1}`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetChapterForm() {
+            document.getElementById('input-title').value = '';
+            document.getElementById('input-content').value = '';
+            document.getElementById('edit-chapter-index').value = -1;
+            document.getElementById('form-heading').innerText = 'Добавить новую главу';
+        }
+
+        function deleteChapter(index) {
+            if (confirm(`Вы уверены, что хотите удалить главу "${chapters[index].title}"?`)) {
+                chapters.splice(index, 1);
+                saveChaptersToStorage();
+                renderAdminList();
+                showToast('Глава удалена');
+            }
+        }
+
+        // Export/Import JSON
+        function exportBookJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(chapters, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "two_souls_book.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importBookJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        chapters = importedData;
+                        saveChaptersToStorage();
+                        renderAdminList();
+                        showToast('Книга успешно импортирована!');
+                    } else {
+                        showToast('Неверный формат файла JSON');
+                    }
+                } catch (err) {
+                    showToast('Ошибка при чтении JSON');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
